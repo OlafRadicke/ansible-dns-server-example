@@ -1,0 +1,11 @@
+
+[dns_server]
+dns-server.localnet ansible_host=192.168.100.235 ansible_user=root
+
+
+[dns_consumer]
+openshift-01-01.localnet ansible_host=192.168.100.189 ansible_user=root
+
+
+[dns_consumer:vars]
+nameservere=dns-server.localnet
