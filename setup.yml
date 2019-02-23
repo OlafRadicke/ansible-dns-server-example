@@ -41,7 +41,7 @@
         state: enabled
 
     - name: Setup dnsmasq config
-      copy:
+      template:
         src: ./files/dnsmasq.conf
         dest: /etc/dnsmasq.conf
         owner: root
@@ -53,8 +53,8 @@
         conn_name: eth0
         type: ethernet
         dns4:
-          - 192.168.100.1
-          - 192.168.100.235
+          - "{{ www_nameservere_ip }}"
+          - "{{ my_nameserver_ip }}"
         state: present
 
     - name: Add mappings to /etc/hosts
@@ -64,8 +64,8 @@
           {{ item.ip }} {{ item.name }}
         marker: "# {mark} ANSIBLE MANAGED BLOCK {{ item.name }}"
       with_items:
-        - { name: dns-server.localnet, ip: 192.168.100.235}
-        - { name: openshift-01-01.localnet, ip: 192.168.100.189 }
+        - { name: dns-server.localnet, ip: "{{ my_nameserver_ip }}"}
+        - { name: openshift-01-01.localnet, ip: 192.168.122.248 }
     
 
     - name: Start service 
@@ -92,17 +92,30 @@
         - NetworkManager-glib
         - dbus
 
+    - name: Remove /etc/resolv.conf 
+      file:
+        state: absent
+        path: "/etc/resolv.conf"
+
+    - name: Remove old DNS server addresses
+      nmcli:
+        conn_name: eth0
+        type: ethernet
+        dns4:
+          - "{{ www_nameservere_ip }}"
+          - 192.168.100.235
+        state: absent
+
     - name: Add two IPv4 DNS server addresses
       nmcli:
         conn_name: eth0
         type: ethernet
         dns4:
-          - 192.168.100.235
+          - "{{ my_nameserver_ip }}"
         state: present
 
-    # - name: Add mappings to /etc/hosts
-    #   blockinfile:
-    #     path: /etc/hosts
-    #     block: |
-    #       {{ ansible_host }} {{ inventory_hostname }}
-    #     marker: "# {mark} ANSIBLE MANAGED BLOCK {{ inventory_hostname }}"
+    - name: remove www dns
+      lineinfile:
+        path: /etc/resolv.conf
+        regexp: '192\.168\.122\.1$'
+        state: absent      
